@@ -14,10 +14,46 @@ import (
 )
 
 type Response struct {
-	ImageName string `json:"image_name"`
+	ImageName       string     `json:"image_name"`
+	TotalDetections int        `json:"total_detections"`
+	Checkboxes      []Checkbox `json:"checkboxes"`
 }
 
 const checkboxSizeInPixel = 25
+
+type Checkbox struct {
+	X      int    `json:"x"`
+	Y      int    `json:"y"`
+	Status string `json:"status"`
+}
+
+func NewCheckbox(box image.Rectangle, image *image.Gray) *Checkbox {
+	status := "checked"
+	isEmpty := isEmptyCheckbox(box, image)
+	if isEmpty {
+		status = "unchecked"
+	}
+	return &Checkbox{X: box.Min.X, Y: box.Min.Y, Status: status}
+}
+
+func isAWhitePosition(x, y int, image *image.Gray) bool {
+	return image.GrayAt(x, y).Y == 255
+}
+
+func isEmptyCheckbox(box image.Rectangle, image *image.Gray) bool {
+	total := 0
+	empties := 0
+	// Avoid considering border pixels
+	for y := box.Min.Y + 1; y < box.Max.Y-1; y++ {
+		for x := box.Min.X + 1; x < box.Max.X-1; x++ {
+			total++
+			if isAWhitePosition(x, y, image) {
+				empties++
+			}
+		}
+	}
+	return (float64(empties) / float64(total) * 100) > 90
+}
 
 // Edge is the interface that all edge types will implement
 type Edge interface {
@@ -119,6 +155,15 @@ func isCheckbox(x, y int, formImage *image.Gray, checkboxSizeInPixel int) bool {
 	return true
 }
 
+func getCheckboxesFrom(image *image.Gray, boxes []image.Rectangle) []Checkbox {
+	response := []Checkbox{}
+	for _, box := range boxes {
+		checkBox := NewCheckbox(box, image)
+		response = append(response, *checkBox)
+	}
+	return response
+}
+
 func findBoxes(formImage *image.Gray) []image.Rectangle {
 	var response []image.Rectangle
 	for y := 0; y < formImage.Bounds().Max.Y; y++ {
@@ -166,34 +211,38 @@ func loadTestImage() (image.Image, string, error) {
 	return formImage, fileName, nil
 }
 
-func getCheckboxes() (string, error) {
+func getCheckboxes() ([]Checkbox, string, error) {
 	// TODO obtain the image from client side image upload
 	formImage, fileName, err := loadTestImage()
 	if err != nil {
 		fmt.Println("error loading test image:", err)
-		return "", err
+		return nil, "", err
 	}
 	blackAndWhiteImage, err := convertToBlackAndWhite(formImage)
 	if err != nil {
 		fmt.Println("error converting image to black and white:", err)
-		return "", err
+		return nil, "", err
 	}
 	boxes := findBoxes(blackAndWhiteImage)
-	fmt.Println("Boxes length: ", len(boxes))
-	return fileName, nil
+	checkboxes := getCheckboxesFrom(blackAndWhiteImage, boxes)
+	return checkboxes, fileName, nil
 }
 
 func checkboxHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	imageName, err := getCheckboxes()
+	checkboxes, imageName, err := getCheckboxes()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Processing checkboxes"})
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(Response{ImageName: imageName})
-
+	response := Response{
+		ImageName:       imageName,
+		TotalDetections: len(checkboxes),
+		Checkboxes:      checkboxes,
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 func main() {
