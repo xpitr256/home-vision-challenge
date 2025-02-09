@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 )
 
-type Response struct {
+type CheckboxResponse struct {
 	ImageName       string     `json:"image_name"`
 	TotalDetections int        `json:"total_detections"`
 	Checkboxes      []Checkbox `json:"checkboxes"`
@@ -196,6 +196,28 @@ func convertToBlackAndWhite(img image.Image) (*image.Gray, error) {
 	return response, nil
 }
 
+func removeBlacks(formImage *image.Gray, list []image.Rectangle) []image.Rectangle {
+	var result []image.Rectangle
+	threshold := float64(90)
+	for _, box := range list {
+		total := 0
+		blackCount := 0
+		for y := box.Min.Y + 1; y < box.Max.Y-1; y++ {
+			for x := box.Min.X + 1; x < box.Max.X-1; x++ {
+				total++
+				if !isAWhitePosition(x, y, formImage) {
+					blackCount++
+				}
+			}
+		}
+		blackRatio := float64(blackCount) / float64(total) * 100
+		if blackRatio < threshold {
+			result = append(result, box)
+		}
+	}
+	return result
+}
+
 func loadTestImage() (image.Image, string, error) {
 	filePath := "test/test-image.jpg"
 	file, err := os.Open(filePath)
@@ -224,6 +246,8 @@ func getCheckboxes() ([]Checkbox, string, error) {
 		return nil, "", err
 	}
 	boxes := findBoxes(blackAndWhiteImage)
+	// Avoid figures with black areas that might be confused with a box
+	boxes = removeBlacks(blackAndWhiteImage, boxes)
 	checkboxes := getCheckboxesFrom(blackAndWhiteImage, boxes)
 	return checkboxes, fileName, nil
 }
@@ -237,7 +261,7 @@ func checkboxHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	response := Response{
+	response := CheckboxResponse{
 		ImageName:       imageName,
 		TotalDetections: len(checkboxes),
 		Checkboxes:      checkboxes,
