@@ -17,6 +17,26 @@ type Response struct {
 	ImageName string `json:"image_name"`
 }
 
+const checkboxSizeInPixel = 25
+
+func isCheckbox(x, y int, formImage *image.Gray, checkboxSizeInPixel int) bool {
+	//TODO verify if there is a checkbox or not
+	return true
+}
+
+func findBoxes(formImage *image.Gray) []image.Rectangle {
+	var response []image.Rectangle
+	for y := 0; y < formImage.Bounds().Max.Y; y++ {
+		for x := 0; x < formImage.Bounds().Max.X; x++ {
+			if isCheckbox(x, y, formImage, checkboxSizeInPixel) {
+				checkbox := image.Rect(x, y, x+checkboxSizeInPixel-1, y+checkboxSizeInPixel-1)
+				response = append(response, checkbox)
+			}
+		}
+	}
+	return response
+}
+
 func convertToBlackAndWhite(img image.Image) (*image.Gray, error) {
 	whiteColor := color.Gray{Y: 255}
 	blackColor := color.Gray{Y: 0}
@@ -63,7 +83,8 @@ func getCheckboxes() (string, error) {
 		fmt.Println("error converting image to black and white:", err)
 		return "", err
 	}
-	fmt.Println(blackAndWhiteImage.Bounds())
+	boxes := findBoxes(blackAndWhiteImage)
+	fmt.Println("Boxes length: ", len(boxes))
 	return fileName, nil
 }
 
