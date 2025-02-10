@@ -19,7 +19,10 @@ type CheckboxResponse struct {
 	Checkboxes      []Checkbox `json:"checkboxes"`
 }
 
-const checkboxSizeInPixel = 25
+const (
+	checkboxSizeInPixel     = 24
+	blackDetectionThreshold = 50
+)
 
 type Checkbox struct {
 	X      int    `json:"x"`
@@ -136,7 +139,7 @@ func (e *Edges) IsStrong(x, y, size int, img *image.Gray) bool {
 }
 
 func isStrongBoundary(strength float64) bool {
-	return strength > 90
+	return strength > 82
 }
 
 func isCheckbox(x, y int, formImage *image.Gray, checkboxSizeInPixel int, lastDetected []image.Rectangle) bool {
@@ -213,7 +216,6 @@ func convertToBlackAndWhite(img image.Image) (*image.Gray, error) {
 
 func removeBlacks(formImage *image.Gray, list []image.Rectangle) []image.Rectangle {
 	var result []image.Rectangle
-	threshold := float64(90)
 	for _, box := range list {
 		total := 0
 		blackCount := 0
@@ -226,7 +228,7 @@ func removeBlacks(formImage *image.Gray, list []image.Rectangle) []image.Rectang
 			}
 		}
 		blackRatio := float64(blackCount) / float64(total) * 100
-		if blackRatio < threshold {
+		if blackRatio < blackDetectionThreshold {
 			result = append(result, box)
 		}
 	}
