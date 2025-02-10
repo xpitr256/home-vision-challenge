@@ -139,7 +139,7 @@ func isStrongBoundary(strength float64) bool {
 	return strength > 90
 }
 
-func isCheckbox(x, y int, formImage *image.Gray, checkboxSizeInPixel int) bool {
+func isCheckbox(x, y int, formImage *image.Gray, checkboxSizeInPixel int, lastDetected []image.Rectangle) bool {
 	edges := &Edges{
 		Top:    &TopEdge{},
 		Bottom: &BottomEdge{},
@@ -152,9 +152,16 @@ func isCheckbox(x, y int, formImage *image.Gray, checkboxSizeInPixel int) bool {
 		return false
 	}
 
+	checkbox := image.Rect(x, y, x+checkboxSizeInPixel-1, y+checkboxSizeInPixel-1)
+
+	// Avoid adding overlapping checkboxes
+	for _, last := range lastDetected {
+		if last.Overlaps(checkbox) {
+			return false
+		}
+	}
 	return true
 }
-
 func getCheckboxesFrom(image *image.Gray, boxes []image.Rectangle) []Checkbox {
 	response := []Checkbox{}
 	for _, box := range boxes {
@@ -165,12 +172,20 @@ func getCheckboxesFrom(image *image.Gray, boxes []image.Rectangle) []Checkbox {
 }
 
 func findBoxes(formImage *image.Gray) []image.Rectangle {
+	var lastDetectedCheckboxes []image.Rectangle
 	var response []image.Rectangle
+
 	for y := 0; y < formImage.Bounds().Max.Y; y++ {
 		for x := 0; x < formImage.Bounds().Max.X; x++ {
-			if isCheckbox(x, y, formImage, checkboxSizeInPixel) {
+			if isCheckbox(x, y, formImage, checkboxSizeInPixel, lastDetectedCheckboxes) {
 				checkbox := image.Rect(x, y, x+checkboxSizeInPixel-1, y+checkboxSizeInPixel-1)
 				response = append(response, checkbox)
+
+				// Keep track of the last 3 detected checkboxes
+				lastDetectedCheckboxes = append(lastDetectedCheckboxes, checkbox)
+				if len(lastDetectedCheckboxes) > 3 {
+					lastDetectedCheckboxes = lastDetectedCheckboxes[1:]
+				}
 			}
 		}
 	}
