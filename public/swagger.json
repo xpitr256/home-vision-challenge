@@ -1,0 +1,72 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Home Vision Challenge Checkbox API",
+    "description": "API for checkbox detection in images",
+    "version": "1.0.0"
+  },
+  "host": "home-vision-challenge-d4dde1803160.herokuapp.com",
+  "schemes": ["https"],
+  "paths": {
+    "/checkbox": {
+      "get": {
+        "summary": "It detects checkboxes in an image",
+        "parameters": [
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of checkboxes to detect",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 24
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Information about the image",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image_name": {
+                  "type": "string",
+                  "example": "test-image.jpg"
+                },
+                "total_detections": {
+                  "type": "integer",
+                  "example": 42
+                },
+                "checkboxes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "integer",
+                        "example": 156
+                      },
+                      "y": {
+                        "type": "integer",
+                        "example": 96
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": ["unchecked", "checked"],
+                        "example": "unchecked"
+                      }
+                    }
+                  }
+                },
+                "size_in_pixels": {
+                  "type": "integer",
+                  "example": 24
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

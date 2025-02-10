@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkbox API - Documentación</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3/swagger-ui.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        p {
+            color: #555;
+        }
+        .swagger-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Checkbox Detection by Pablo Rodriguez Massuh</h1>
+    <p>Welcome to the Checkbox Detection API. This API is designed to detect checkboxes in images and determine whether they are checked or unchecked.</p>
+
+    <h2>How It Works</h2>
+    <p>This API allows you to send an image and returns structured data with the location and status of detected checkboxes.</p>
+
+    <h2>Usage</h2>
+    <p>Send a request to the <code>/checkbox</code> endpoint with the image and optional size parameter.</p>
+
+    <h3>Example Request</h3>
+    <pre><code>GET /checkbox?size=24</code></pre>
+
+    <h3>Response Format</h3>
+    <pre><code>{
+  "image_name": "test-image.jpg",
+  "total_detections": 42,
+  "checkboxes": [
+    { "x": 156, "y": 96, "status": "unchecked" },
+    { "x": 282, "y": 96, "status": "checked" }
+  ],
+  "size_in_pixels": 24
+}</code></pre>
+
+    <h2>API Documentation</h2>
+    <p>The Swagger UI below provides interactive API documentation.</p>
+</div>
+
+<div id="swagger-ui" class="swagger-container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3/swagger-ui-bundle.min.js"></script>
+<script>
+    window.onload = function() {
+        SwaggerUIBundle({
+            url: "swagger.json",
+            dom_id: "#swagger-ui"
+        });
+    };
+</script>
+
+</body>
+</html>
