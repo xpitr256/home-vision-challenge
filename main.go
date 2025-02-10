@@ -11,17 +11,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 type CheckboxResponse struct {
 	ImageName       string     `json:"image_name"`
 	TotalDetections int        `json:"total_detections"`
 	Checkboxes      []Checkbox `json:"checkboxes"`
+	SizeInPixels    int        `json:"size_in_pixels"`
 }
 
 const (
-	checkboxSizeInPixel     = 24
-	blackDetectionThreshold = 50
+	CheckboxDefaultSizeInPixels = 24
+	blackDetectionThreshold     = 50
 )
 
 type Checkbox struct {
@@ -174,7 +176,7 @@ func getCheckboxesFrom(image *image.Gray, boxes []image.Rectangle) []Checkbox {
 	return response
 }
 
-func findBoxes(formImage *image.Gray) []image.Rectangle {
+func findBoxes(formImage *image.Gray, checkboxSizeInPixel int) []image.Rectangle {
 	var lastDetectedCheckboxes []image.Rectangle
 	var response []image.Rectangle
 
@@ -250,7 +252,23 @@ func loadTestImage() (image.Image, string, error) {
 	return formImage, fileName, nil
 }
 
-func getCheckboxes() ([]Checkbox, string, error) {
+func getCheckboxSize(r *http.Request) (int, error) {
+	checkboxSizeInPixels := CheckboxDefaultSizeInPixels
+	checkboxSizeInPixelsStr := r.URL.Query().Get("size")
+	if checkboxSizeInPixelsStr != "" {
+		converted, err := strconv.Atoi(checkboxSizeInPixelsStr)
+		if err != nil {
+			return 0, errors.New("invalid 'size' parameter, must be an integer between 1 and 200")
+		}
+		checkboxSizeInPixels = converted
+	}
+	if checkboxSizeInPixels <= 0 || checkboxSizeInPixels > 200 {
+		return 0, errors.New("'size' parameter must be between 1 and 200")
+	}
+	return checkboxSizeInPixels, nil
+}
+
+func getCheckboxes(sizeInPixel int) ([]Checkbox, string, error) {
 	// TODO obtain the image from client side image upload
 	formImage, fileName, err := loadTestImage()
 	if err != nil {
@@ -262,7 +280,7 @@ func getCheckboxes() ([]Checkbox, string, error) {
 		fmt.Println("error converting image to black and white:", err)
 		return nil, "", err
 	}
-	boxes := findBoxes(blackAndWhiteImage)
+	boxes := findBoxes(blackAndWhiteImage, sizeInPixel)
 	// Avoid figures with black areas that might be confused with a box
 	boxes = removeBlacks(blackAndWhiteImage, boxes)
 	checkboxes := getCheckboxesFrom(blackAndWhiteImage, boxes)
@@ -271,7 +289,12 @@ func getCheckboxes() ([]Checkbox, string, error) {
 
 func checkboxHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	checkboxes, imageName, err := getCheckboxes()
+	checkboxSizeInPixels, err := getCheckboxSize(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	checkboxes, imageName, err := getCheckboxes(checkboxSizeInPixels)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Processing checkboxes"})
@@ -282,6 +305,7 @@ func checkboxHandler(w http.ResponseWriter, r *http.Request) {
 		ImageName:       imageName,
 		TotalDetections: len(checkboxes),
 		Checkboxes:      checkboxes,
+		SizeInPixels:    checkboxSizeInPixels,
 	}
 	json.NewEncoder(w).Encode(response)
 }
