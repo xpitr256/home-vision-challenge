@@ -61,6 +61,10 @@
                 "size_in_pixels": {
                   "type": "integer",
                   "example": 24
+                },
+                "image_with_checkboxes_url": {
+                  "type": "string",
+                  "example": "/response/image_with_checkboxes.jpg"
                 }
               }
             }

@@ -26,15 +26,16 @@ func loadTestImage() (image.Image, string, error) {
 	return formImage, fileName, nil
 }
 
-func convertToBlackAndWhite(img image.Image) (*image.Gray, error) {
+func convertToBlackAndWhite(img image.Image) *image.Gray {
 	whiteColor := color.Gray{Y: 255}
 	blackColor := color.Gray{Y: 0}
 	response := image.NewGray(img.Bounds())
+
 	for y := 0; y < img.Bounds().Max.Y; y++ {
 		for x := 0; x < img.Bounds().Max.X; x++ {
 			r, g, b, _ := img.At(x, y).RGBA()
 			brightness := uint8((r*299 + g*587 + b*114) / 1000 >> 8)
-			// Less than 128 of brightness I considered it as "dark"
+			// Less than 128 brightness is considered "dark"
 			if brightness < 128 {
 				response.SetGray(x, y, blackColor)
 			} else {
@@ -42,7 +43,7 @@ func convertToBlackAndWhite(img image.Image) (*image.Gray, error) {
 			}
 		}
 	}
-	return response, nil
+	return response
 }
 
 func isCheckbox(x, y int, formImage *image.Gray, checkboxSizeInPixel int, lastDetected []image.Rectangle) bool {
@@ -120,19 +121,20 @@ func getCheckboxesFrom(image *image.Gray, boxes []image.Rectangle) []model.Check
 	return response
 }
 
-func GetCheckboxes(sizeInPixel int) ([]model.Checkbox, string, error) {
+func GetCheckboxes(sizeInPixel int) ([]model.Checkbox, string, string, error) {
 	// TODO: Replace with actual image upload from client
 	formImage, fileName, err := loadTestImage()
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
-	blackAndWhiteImage, err := convertToBlackAndWhite(formImage)
-	if err != nil {
-		return nil, "", err
-	}
+	blackAndWhiteImage := convertToBlackAndWhite(formImage)
 	boxes := findBoxes(blackAndWhiteImage, sizeInPixel)
 	// Avoid figures with black areas that might be confused with a box
 	boxes = removeBlacks(blackAndWhiteImage, boxes)
 	checkboxes := getCheckboxesFrom(blackAndWhiteImage, boxes)
-	return checkboxes, fileName, nil
+	imageWithCheckboxes, err := model.NewImageWithBoxes(blackAndWhiteImage, checkboxes)
+	if err != nil {
+		return nil, "", "", err
+	}
+	return checkboxes, fileName, imageWithCheckboxes.ImageUrl, nil
 }

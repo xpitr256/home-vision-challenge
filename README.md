@@ -48,12 +48,13 @@ GET /checkbox?size=24
     { "x": 156, "y": 96, "status": "unchecked" },
     { "x": 282, "y": 96, "status": "checked" }
   ],
-  "size_in_pixels": 24
+  "size_in_pixels": 24,
+  "image_with_checkboxes_url": "/response/image_with_checkboxes.jpg"
+   
 }
 ```
 
 ## Future Improvements
 
-- Add a user-friendly frontend to support image uploads.
 - Enhance detection accuracy with improved algorithms.
 - Support additional image formats.

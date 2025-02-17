@@ -41,6 +41,10 @@ func main() {
 	fs := http.FileServer(http.Dir("./public"))
 	mux.Handle("/", fs)
 
+	// Allow clients to access response image with colored checkboxes
+	fsResponse := http.FileServer(http.Dir("./response"))
+	mux.Handle("/response/", http.StripPrefix("/response/", fsResponse))
+
 	handler := enableCORS(mux)
 
 	fmt.Printf("Server running on port %s\n", port)
