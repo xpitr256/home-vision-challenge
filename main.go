@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	_ "image/jpeg"
 	"log"
 	"net/http"
@@ -30,6 +29,9 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
+		log.Printf("PORT environment variable not set, defaulting to %s", port)
+	} else {
+		log.Printf("Server will run on port %s", port)
 	}
 
 	mux := http.NewServeMux()
@@ -44,8 +46,10 @@ func main() {
 	fsResponse := http.FileServer(http.Dir("./response"))
 	mux.Handle("/response/", http.StripPrefix("/response/", fsResponse))
 
+	log.Printf("All routes configured")
+
 	handler := enableCORS(mux)
 
-	fmt.Printf("Server running on port %s\n", port)
+	log.Printf("Server running on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, handler))
 }

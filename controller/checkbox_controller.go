@@ -38,7 +38,7 @@ func GetCheckboxSize(r *http.Request) (int, error) {
 // Acts as a Template Method
 func processCheckboxRequest(w http.ResponseWriter, r *http.Request, loadImageFunc func(*http.Request) (image.Image, string, error)) {
 	w.Header().Set("Content-Type", "application/json")
-
+	// TODO: defer Add a latency metric here to measure the whole time taken
 	checkboxSizeInPixels, err := GetCheckboxSize(r)
 	if err != nil {
 		log.Printf("Error getting checkbox size: %v", err)
@@ -46,6 +46,7 @@ func processCheckboxRequest(w http.ResponseWriter, r *http.Request, loadImageFun
 		return
 	}
 
+	// TODO: Add a latency metric here to measure the time taken to load the image
 	formImage, imageName, err := loadImageFunc(r)
 	if err != nil {
 		log.Printf("Error loading image: %v", err)
@@ -53,6 +54,7 @@ func processCheckboxRequest(w http.ResponseWriter, r *http.Request, loadImageFun
 		return
 	}
 
+	// TODO: Add a latency metric here to measure the time taken to process checkboxes
 	checkboxes, responseImageUrl, err := service.GetCheckboxes(checkboxSizeInPixels, formImage)
 	if err != nil {
 		log.Printf("Error processing checkboxes: %v", err)
@@ -72,10 +74,14 @@ func processCheckboxRequest(w http.ResponseWriter, r *http.Request, loadImageFun
 }
 
 func checkboxGetHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: Add a request count metric here for GET requests t
+	log.Printf("Entering checkboxGetHandler with method: %s, URL: %s", r.Method, r.URL)
 	processCheckboxRequest(w, r, service.LoadTestImage)
 }
 
 func checkboxPostHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: Add a request count metric here for POST requests
+	log.Printf("Entering checkboxPostHandler with method: %s, Content-Type: %s, Content-Length: %d", r.Method, r.Header.Get("Content-Type"), r.ContentLength)
 	processCheckboxRequest(w, r, service.LoadImageFromRequest)
 }
 

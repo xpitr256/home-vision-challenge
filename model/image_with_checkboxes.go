@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/draw"
 	"image/jpeg"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -18,6 +19,7 @@ const imageFileName = "image_with_checkboxes.jpg"
 const imageStorageDir = "./response"
 
 func NewImageWithBoxes(sourceImage *image.Gray, boxes []Checkbox) (ImageWithBoxes, error) {
+	log.Printf("New ImageWithBoxes is being created with %d boxes", len(boxes))
 	imageWithBoxes := ImageWithBoxes{
 		ImageUrl:    filepath.Join("/response", imageFileName),
 		sourceImage: sourceImage,
@@ -45,6 +47,7 @@ func (iwb *ImageWithBoxes) createColoredImage() *image.RGBA {
 }
 
 func (iwb *ImageWithBoxes) paintCheckboxes(coloredImage *image.RGBA) {
+	// TODO: Add a latency metric here to measure the time taken to paint checkboxes
 	for _, checkbox := range iwb.checkboxes {
 		checkboxColor := checkbox.getColor()
 		// Add 3 px borders
@@ -73,6 +76,7 @@ func (iwb *ImageWithBoxes) paintCheckboxes(coloredImage *image.RGBA) {
 }
 
 func (iwb *ImageWithBoxes) saveImage(coloredImage *image.RGBA) error {
+	log.Printf("ImageWithBoxes is being saved")
 	filePath := filepath.Join(imageStorageDir, imageFileName)
 	outputFile, err := os.Create(filePath)
 	if err != nil {

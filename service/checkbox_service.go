@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -55,6 +56,7 @@ func LoadImageFromRequest(r *http.Request) (image.Image, string, error) {
 }
 
 func convertToBlackAndWhite(img image.Image) *image.Gray {
+	// TODO: Add a latency metric here to measure the time taken to convert the image to black and white
 	whiteColor := color.Gray{Y: 255}
 	blackColor := color.Gray{Y: 0}
 	response := image.NewGray(img.Bounds())
@@ -99,6 +101,7 @@ func isCheckbox(x, y int, formImage *image.Gray, checkboxSizeInPixel int, lastDe
 }
 
 func findBoxes(formImage *image.Gray, checkboxSizeInPixel int) []image.Rectangle {
+	// TODO: Add a latency metric here to measure the time taken to find checkbox boxes
 	var lastDetectedCheckboxes []image.Rectangle
 	var response []image.Rectangle
 
@@ -120,6 +123,7 @@ func findBoxes(formImage *image.Gray, checkboxSizeInPixel int) []image.Rectangle
 }
 
 func removeBlacks(formImage *image.Gray, list []image.Rectangle) []image.Rectangle {
+	// TODO: Add a log entry here to track when removing black areas
 	var result []image.Rectangle
 	for _, box := range list {
 		total := 0
@@ -150,6 +154,7 @@ func getCheckboxesFrom(image *image.Gray, boxes []image.Rectangle) []model.Check
 }
 
 func GetCheckboxes(sizeInPixel int, formImage image.Image) ([]model.Checkbox, string, error) {
+	// TODO: Add a latency metric here to measure the total time taken to get checkboxes
 	blackAndWhiteImage := convertToBlackAndWhite(formImage)
 	boxes := findBoxes(blackAndWhiteImage, sizeInPixel)
 	// Avoid figures with black areas that might be confused with a box
@@ -157,7 +162,9 @@ func GetCheckboxes(sizeInPixel int, formImage image.Image) ([]model.Checkbox, st
 	checkboxes := getCheckboxesFrom(blackAndWhiteImage, boxes)
 	imageWithCheckboxes, err := model.NewImageWithBoxes(blackAndWhiteImage, checkboxes)
 	if err != nil {
+		log.Printf("Error saving imageWithCheckboxes: %v", err)
 		return nil, "", err
 	}
+	log.Printf("Exiting GetCheckboxes with %d checkboxes detected", len(checkboxes))
 	return checkboxes, imageWithCheckboxes.ImageUrl, nil
 }
