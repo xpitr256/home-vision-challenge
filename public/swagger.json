@@ -10,7 +10,7 @@
   "paths": {
     "/checkbox": {
       "get": {
-        "summary": "It detects checkboxes in an image",
+        "summary": "Detects checkboxes in an already uploaded test image",
         "parameters": [
           {
             "name": "size",
@@ -37,6 +37,14 @@
                   "type": "integer",
                   "example": 42
                 },
+                "checkbox_size_in_pixels": {
+                  "type": "integer",
+                  "example": 24
+                },
+                "image_with_checkboxes_url": {
+                  "type": "string",
+                  "example": "/response/image_with_checkboxes.jpg"
+                },
                 "checkboxes": {
                   "type": "array",
                   "items": {
@@ -57,17 +65,87 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Detects checkboxes in an uploaded image",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "image",
+            "in": "formData",
+            "description": "The image file to upload",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of checkboxes to detect",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 24
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Information about the processed image",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image_name": {
+                  "type": "string",
+                  "example": "uploaded-image.jpg"
                 },
-                "size_in_pixels": {
+                "total_detections": {
+                  "type": "integer",
+                  "example": 42
+                },
+                "checkbox_size_in_pixels": {
                   "type": "integer",
                   "example": 24
                 },
                 "image_with_checkboxes_url": {
                   "type": "string",
                   "example": "/response/image_with_checkboxes.jpg"
+                },
+                "checkboxes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "integer",
+                        "example": 156
+                      },
+                      "y": {
+                        "type": "integer",
+                        "example": 96
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": ["unchecked", "checked"],
+                        "example": "unchecked"
+                      }
+                    }
+                  }
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad request - invalid image or parameters"
+          },
+          "500": {
+            "description": "Server error"
           }
         }
       }

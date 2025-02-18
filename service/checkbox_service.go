@@ -2,16 +2,19 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/xpitr256/home-vision-challenge/model"
 	"image"
 	"image/color"
+	"image/jpeg"
+	"net/http"
 	"os"
 	"path/filepath"
 )
 
 const blackDetectionThreshold = 50
 
-func loadTestImage() (image.Image, string, error) {
+func LoadTestImage(r *http.Request) (image.Image, string, error) {
 	filePath := "test/test-image.jpg"
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -24,6 +27,31 @@ func loadTestImage() (image.Image, string, error) {
 		return nil, "", errors.New("error decoding image")
 	}
 	return formImage, fileName, nil
+}
+
+func LoadImageFromRequest(r *http.Request) (image.Image, string, error) {
+	err := r.ParseMultipartForm(5 << 20) // 5MB
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to parse form: %w", err)
+	}
+
+	file, header, err := r.FormFile("image")
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get image file: %w", err)
+	}
+	defer file.Close()
+
+	contentType := header.Header.Get("Content-Type")
+	if contentType != "image/jpeg" {
+		return nil, "", fmt.Errorf("unsupported image format: %s", contentType)
+	}
+
+	img, err := jpeg.Decode(file)
+	if err != nil {
+		return nil, "", fmt.Errorf("error decoding image: %w", err)
+	}
+
+	return img, header.Filename, nil
 }
 
 func convertToBlackAndWhite(img image.Image) *image.Gray {
@@ -121,12 +149,7 @@ func getCheckboxesFrom(image *image.Gray, boxes []image.Rectangle) []model.Check
 	return response
 }
 
-func GetCheckboxes(sizeInPixel int) ([]model.Checkbox, string, string, error) {
-	// TODO: Replace with actual image upload from client
-	formImage, fileName, err := loadTestImage()
-	if err != nil {
-		return nil, "", "", err
-	}
+func GetCheckboxes(sizeInPixel int, formImage image.Image) ([]model.Checkbox, string, error) {
 	blackAndWhiteImage := convertToBlackAndWhite(formImage)
 	boxes := findBoxes(blackAndWhiteImage, sizeInPixel)
 	// Avoid figures with black areas that might be confused with a box
@@ -134,7 +157,7 @@ func GetCheckboxes(sizeInPixel int) ([]model.Checkbox, string, string, error) {
 	checkboxes := getCheckboxesFrom(blackAndWhiteImage, boxes)
 	imageWithCheckboxes, err := model.NewImageWithBoxes(blackAndWhiteImage, checkboxes)
 	if err != nil {
-		return nil, "", "", err
+		return nil, "", err
 	}
-	return checkboxes, fileName, imageWithCheckboxes.ImageUrl, nil
+	return checkboxes, imageWithCheckboxes.ImageUrl, nil
 }

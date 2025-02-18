@@ -48,7 +48,7 @@ GET /checkbox?size=24
     { "x": 156, "y": 96, "status": "unchecked" },
     { "x": 282, "y": 96, "status": "checked" }
   ],
-  "size_in_pixels": 24,
+  "checkbox_size_in_pixels": 24,
   "image_with_checkboxes_url": "/response/image_with_checkboxes.jpg"
    
 }

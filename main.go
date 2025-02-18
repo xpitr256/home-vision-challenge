@@ -34,7 +34,6 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// TODO migrate to POST request when receiving the image from client
 	mux.HandleFunc("/checkbox", controller.CheckboxHandler)
 
 	// Render api documentation

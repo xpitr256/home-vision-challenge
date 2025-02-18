@@ -39,28 +39,41 @@
     <p>Welcome to the Checkbox Detection API. This API is designed to detect checkboxes in images and determine whether they are checked or unchecked.</p>
 
     <h2>How It Works</h2>
-    <p>This API allows you to send an image and returns structured data with the location and status of detected checkboxes.</p>
+    <p>This API allows you to send an image either through a GET request for predefined test images or via a POST request for uploaded images, returning structured data with the location and status of detected checkboxes.</p>
 
     <h2>Usage</h2>
-    <p>Send a request to the <code>/checkbox</code> endpoint with the image and optional size parameter.</p>
+    <p>Send a request to the <code>/checkbox</code> endpoint:</p>
 
-    <h3>Example Request</h3>
+    <h3>GET Example</h3>
     <pre><code>GET /checkbox?size=24</code></pre>
+    <p>This uses a predefined test image.</p>
+
+    <h3>POST Example</h3>
+    <pre><code>POST /checkbox
+Content-Type: multipart/form-data
+
+--boundary
+Content-Disposition: form-data; name="image"; filename="your-image.jpg"
+Content-Type: image/jpeg
+
+[image data here]
+--boundary--</code></pre>
+    <p>This uploads an image from your device. You can also include the size parameter in the query string, e.g., <code>/checkbox?size=24</code>.</p>
 
     <h3>Response Format</h3>
     <pre><code>{
-  "image_name": "test-image.jpg",
+  "image_name": "test-image.jpg" or "uploaded-image.jpg",
   "total_detections": 42,
+  "checkbox_size_in_pixels": 24,
+  "image_with_checkboxes_url": "/response/image_with_checkboxes.jpg",
   "checkboxes": [
     { "x": 156, "y": 96, "status": "unchecked" },
     { "x": 282, "y": 96, "status": "checked" }
-  ],
-  "size_in_pixels": 24,
-  "image_with_checkboxes_url": "/response/image_with_checkboxes.jpg"
+  ]
 }</code></pre>
 
     <h2>API Documentation</h2>
-    <p>The Swagger UI below provides interactive API documentation.</p>
+    <p>The Swagger UI below provides interactive API documentation for both GET and POST methods.</p>
 </div>
 
 <div id="swagger-ui" class="swagger-container"></div>

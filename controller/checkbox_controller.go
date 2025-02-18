@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/xpitr256/home-vision-challenge/model"
 	"github.com/xpitr256/home-vision-challenge/service"
+	"image"
 	"log"
 	"net/http"
 	"strconv"
@@ -34,27 +35,31 @@ func GetCheckboxSize(r *http.Request) (int, error) {
 	return checkboxSizeInPixels, nil
 }
 
-func CheckboxHandler(w http.ResponseWriter, r *http.Request) {
+// Acts as a Template Method
+func processCheckboxRequest(w http.ResponseWriter, r *http.Request, loadImageFunc func(*http.Request) (image.Image, string, error)) {
 	w.Header().Set("Content-Type", "application/json")
+
 	checkboxSizeInPixels, err := GetCheckboxSize(r)
 	if err != nil {
 		log.Printf("Error getting checkbox size: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error":  err.Error(),
-			"status": http.StatusBadRequest,
-		})
-	}
-	checkboxes, imageName, responseImageUrl, err := service.GetCheckboxes(checkboxSizeInPixels)
-	if err != nil {
-		log.Printf("Error processing checkboxes: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error":  err.Error(),
-			"status": http.StatusInternalServerError,
-		})
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	formImage, imageName, err := loadImageFunc(r)
+	if err != nil {
+		log.Printf("Error loading image: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	checkboxes, responseImageUrl, err := service.GetCheckboxes(checkboxSizeInPixels, formImage)
+	if err != nil {
+		log.Printf("Error processing checkboxes: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	response := CheckboxResponse{
 		ImageName:              imageName,
@@ -64,4 +69,23 @@ func CheckboxHandler(w http.ResponseWriter, r *http.Request) {
 		ImageWithCheckboxesUrl: responseImageUrl,
 	}
 	json.NewEncoder(w).Encode(response)
+}
+
+func checkboxGetHandler(w http.ResponseWriter, r *http.Request) {
+	processCheckboxRequest(w, r, service.LoadTestImage)
+}
+
+func checkboxPostHandler(w http.ResponseWriter, r *http.Request) {
+	processCheckboxRequest(w, r, service.LoadImageFromRequest)
+}
+
+func CheckboxHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		checkboxPostHandler(w, r)
+	case http.MethodGet:
+		checkboxGetHandler(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }

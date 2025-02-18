@@ -18,10 +18,10 @@ var (
 )
 
 type Checkbox struct {
-	X      int    `json:"x"`
-	Y      int    `json:"y"`
-	Status string `json:"status"`
-	Box    image.Rectangle
+	X      int             `json:"x"`
+	Y      int             `json:"y"`
+	Status string          `json:"status"`
+	Box    image.Rectangle `json:"-"`
 }
 
 func NewCheckbox(box image.Rectangle, image *image.Gray) *Checkbox {
